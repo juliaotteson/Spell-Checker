@@ -1,0 +1,81 @@
+# Spell-Checker
+Project Completed for Data Structures
+/*
+This is the .cpp file for an open hash table of strings.  Each bucket is implemented as a singly linked list of entries.
+The file contains implementations for standard hash table methods such as membership testing, insertion as well as a
+private method to compute the hash value of a string.
+
+Date:  4/19/15
+
+Modification date: 5/7/2018
+
+Modified by: Julia and Mustafa
+
+*/
+
+#include "hashtable.h"
+
+
+HashTable::HashTable()
+//Precondition:  None
+//Postcondition: Every cell of the table has been initialized to be empty.
+{
+	for (int i = 0; i < B; i++)
+		arr[i] = NULL;
+}
+
+
+int HashTable::hash(string word)
+//Precondition: word contains the word that needs to have a hash value computed
+//Postcondition: the hash value of word is computed and returned.
+{
+	int answer = 0;
+	for (int i = 0; i < word.length(); i++)  //add up all the ask values of word
+		answer += answer + (int)word[i];
+
+	return answer % B;   //return the sum of the ascii values mod the number of buckets
+}
+
+
+bool HashTable::member(string word)
+//Precondition:  word contains the value that we want to determine is in the table
+//Postcondition: returns true if word is in the table, otherwise returns false
+{
+	int cell = hash(word);
+
+	HashNode* temp = arr[cell];
+
+	while (temp)
+	{	if (temp->data == word)
+			return true;
+		temp = temp->next;
+	}
+	return false;
+}
+
+
+
+void HashTable::insert(string word)
+//Precondition:  word is the value that needs to be inserted into the table
+//Postcondition: if word is already in the table, no change is made.  Otherwise, word
+//               is inserted into the front of the appropriate bucket.
+{
+	if (member(word))
+		return;
+	else {
+		int cell = hash(word);
+	if (arr[cell] == NULL) {
+		arr[cell] = new HashNode;
+		arr[cell]->data = word;
+		arr[cell]->next = NULL;
+	}
+	else{
+
+		HashNode* temp = new HashNode;
+
+		temp->data = word;
+		temp->next = arr[cell];
+		arr[cell] = temp;
+	}
+}
+}
