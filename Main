@@ -1,0 +1,203 @@
+# Spell-Checker
+Project Completed for Data Structures
+/*  
+This program is a simple spell checker.  When the program runs, it loads two dictionary
+files named common.txt and customdictionary.txt into two seperate hash tables. Common.txt file contains about 50 very common
+English words. customdictionary.txt includes words inserted by the user such as 'depauw' and 'greencastle'. The program then prompts the user to enter the name of a file to spell check.
+Each word in the user's file is tested for membership in the hashtables. If the word is not
+in the hashtables, the word is inserted into a bst. Then a large dictionary file named
+maindictionary.txt with rough 100,000 words is loaded. Each word from this file is removed from
+the binary search tree.  The binary search tree is then printed in order to display the
+mispelled words in alphatical order. The number of times each word is misspelled is also printed.
+
+=============================================================================================================
+LICENSING INFORMATION
+---------------------
+Copyright (c) J Ross Beresford 1993-2000. All Rights Reserved.
+
+The following restriction is placed on the use of this publication: if The UK Advanced Cryptics Dictionary
+is used in a software package or redistributed in any form, thecopyright notice must be prominently displayed
+and the text of this document must be included verbatim. There are no other restrictions: I would like to see
+the list distributed as widely as possible.
+==============================================================================================================
+
+Date: April 19th, 2015
+
+Modification date: 5/7/2018
+
+Modified by: Julia and Mustafa
+*/
+
+#include "string"
+#include "hashTable.h"
+#include "bst.h"
+
+#include <iostream>
+#include <fstream>
+using namespace std;
+
+
+string getNextWord(fstream &infile)
+//Precondition:  infile has been opened for reading.
+//Postcondition: if the file contains another 'word' then the next word is
+//               read and returned, otherwise the empty string "" is returned.
+{	int index = 0;
+	char junk, ch;
+	string word = "";
+
+	while (!infile.eof())   //skip over chars that are not letters, - and '
+	{   ch = infile.peek();
+		if (!isalpha(ch) && ch != '-' && ch != '\'')
+			junk = infile.get();
+		else
+			break;
+	}
+
+	while (!infile.eof())  //keep accumulating chars that are letters, - and '
+	{   ch = infile.peek();
+		if (isalpha(ch) || ch == '-' || ch == '\'')
+		{   ch = infile.get();
+			word = word + ch;
+		}
+		else 
+			break;
+	}
+
+	return word;
+}
+
+
+void terminateWithErrorMessage(string message)
+//Precondition: Message contains a description of an error condition
+//Postcondition: Message is displayed and the user has been prompted to
+//               press return to terminate the program.
+{   cout << message << endl;
+	cin.get();   //wait for return to be pressed
+	exit(0);     //terminate the program
+}
+
+
+void convertToLower(string &word)
+//Precondition:  None
+//Postcondition: Any upper case letters in word are converted to the
+//               corresponding lower case letter. Other characters are
+//               unchanged.
+{   for (int i = 0; i < word.length(); i++)
+		if (word[i] >= 'A' && word[i] <= 'Z')
+		   word[i] = word[i] + 32;
+}
+
+
+
+void loadCommonWords(HashTable &commonWordsHT)
+//Precondition: common.txt contains common dictionary words all in lower case
+//Postcondition: If there is a problem opening common.txt an error is printed and the program
+//               terminates. Otherwise, all the words in the file "common.txt" have been inserted
+//               into the hash table named "commonWordsHT". 
+{
+	fstream theFile;
+	string word;
+
+	theFile.open("common.txt", ios::in);
+	if (theFile.fail())
+		terminateWithErrorMessage("The file common.txt could not be opened.");
+	
+	while (!theFile.eof())
+	{   word = getNextWord(theFile);
+		commonWordsHT.insert(word);
+	}
+	theFile.close();
+}
+void loadCustomWords(HashTable &customWordsHT)
+//Precondition: customdictionary.txt contains words inserted by the user, in this case, 'depauw'
+                //and 'greencastle' all in lower case
+//Postcondition: If there is a problem opening customdictionary.txt an error is printed and the program
+//               terminates. Otherwise, all the words in the file "customdictionary.txt" have been inserted
+//               into the hash table named "customWordsHT". 
+{
+	fstream theFile;
+	string word;
+
+	theFile.open("customdictionary.txt", ios::in);
+	if (theFile.fail())
+		terminateWithErrorMessage("The file customdictionary.txt could not be opened.");
+
+	while (!theFile.eof())
+	{
+		word = getNextWord(theFile);
+		customWordsHT.insert(word);
+	}
+	theFile.close();
+}
+
+
+void processFileToSpellCheck(HashTable commonWordsHT,  bst &theTree, HashTable customWordsHT)
+//Precondition:  The hashtable commonWordsHT has been loaded with common English words in lower case.
+//               The hashtable customWordsHT has also been loaded with the words 'depauw' and 'greencastle' in lower case.
+//Postondition:  The user has entered the name of a file to spell check. If there is a problem
+//               opening this file, an error is printed and the program terminates.  Otherwise,
+//               all the words in the user file, that are not in the commonWordsHT or customWordsHT have been
+//               inserted into the bst named theTree.
+{   fstream theFile;
+	string fileNameToSpellCheck;
+	string word;
+
+	cout << "Please enter name of file to spell check: ";
+    getline(cin, fileNameToSpellCheck);  //Good way to read in a string that is terminated in a return
+
+	theFile.open(fileNameToSpellCheck, ios::in);
+	if (theFile.fail())
+		terminateWithErrorMessage("The file " + fileNameToSpellCheck + " could not be opened.");
+
+	while (!theFile.eof())
+	{
+		word = getNextWord(theFile);
+		convertToLower(word);
+
+		if (!commonWordsHT.member(word) && !customWordsHT.member(word))
+			theTree.insert(word);
+	}
+	theFile.close();
+}
+
+
+void removeMainDictionaryWords(bst &theTree)
+//Precondition:  theTree contains all the words in the user file which were not in the common dictionary or the custom dictionary.
+//               maindictionary.txt contains dictionary words in lower case.
+//Postcondition: if the file maindictionary.txt cannot be opened an error message is printed and the 
+//               program terminates, otherwise all the words from maindictonary.txt are removed from theTree
+{
+	fstream theFile;
+	string mainDictionaryFileName;
+	string word;
+
+	theFile.open("maindictionary.txt", ios::in);
+	if (theFile.fail())
+		terminateWithErrorMessage("The file maindictionary.txt could not be opened.");
+
+	while (!theFile.eof())
+	{   word = getNextWord(theFile);
+	    //Note: if the word is not in theTree, no change is made to theTree
+		theTree.remove(word);
+	}
+	theFile.close();
+}
+
+
+int main()
+{
+	HashTable commonWords;
+	HashTable customWords;
+	bst theTree;
+
+	loadCommonWords(commonWords);
+	loadCustomWords(customWords);
+	processFileToSpellCheck(commonWords, theTree, customWords);
+	removeMainDictionaryWords(theTree);
+
+	cout << "The mispelled words are: " << endl;
+	theTree.inorder();
+
+    cin.get();
+    return 0;
+}
